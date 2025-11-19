@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,6 +24,7 @@ func Login(email, password string) (string, string, error) {
 	id := 0
 	salt := ""
 	passwordHash := ""
+	token := ""
 	err := DB.QueryRow("SELECT id,password_salt,password_hash FROM users WHERE email = ?", email).Scan(&id, &salt, &passwordHash)
 	if err == sql.ErrNoRows {
 		return "", "the email doesn't exist", nil
@@ -33,7 +35,14 @@ func Login(email, password string) (string, string, error) {
 	if err != nil {
 		return "", "password is wrong", nil
 	}
-	token, err := GenerateRandom(32)
+	err = DB.QueryRow("SELECT token FROM tokens WHERE user_id = ?", id).Scan(&token)
+	if err != nil && err != sql.ErrNoRows {
+		return "", "", err
+	}
+	if token != "" {
+		return token, "", nil
+	}
+	token, err = GenerateRandom(128)
 	if err != nil {
 		return "", "", err
 	}
@@ -62,7 +71,7 @@ func Register(email, password string) (string, error) {
 		return "", err
 	}
 	now := time.Now().Unix()
-	_, err = DB.Exec("INSERT INTO users(email,username,password_salt,password_hash,created_at) VALUES (?,?,?,?,?)", email, "user", salt, passwordHash, now)
+	_, err = DB.Exec("INSERT INTO users(email,username,password_salt,password_hash,created_at) VALUES (?,?,?,?,?)", email, email, salt, passwordHash, now)
 	if err != nil {
 		return "", err
 	}

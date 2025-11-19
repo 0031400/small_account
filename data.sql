@@ -12,7 +12,7 @@ CREATE TABLE users (
 );
 CREATE TABLE tokens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL UNIQUE,
     token TEXT NOT NULL UNIQUE,
     created_at INTEGER NOT NULL,
     deleted_at INTEGER,

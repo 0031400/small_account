@@ -2,18 +2,20 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"small_account/model"
 	"strings"
 )
 
-type RegisterRequest struct {
+type RegisterAndLoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 func Register() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		d := RegisterRequest{}
+		d := RegisterAndLoginRequest{}
 		err := json.NewDecoder(r.Body).Decode(&d)
 		if err != nil {
 			w.WriteHeader(400)
@@ -23,16 +25,22 @@ func Register() func(w http.ResponseWriter, r *http.Request) {
 		if !v {
 			w.Write([]byte(msg))
 			w.WriteHeader(400)
+			return
 		}
-		b, err := json.Marshal(d)
+		msg, err = model.Register(d.Email, d.Password)
 		if err != nil {
+			log.Println(err)
 			w.WriteHeader(500)
 			return
 		}
-		w.Write(b)
+		if msg != "" {
+			w.WriteHeader(400)
+			w.Write([]byte(msg))
+			return
+		}
 	}
 }
-func Validate(d RegisterRequest) (bool, string) {
+func Validate(d RegisterAndLoginRequest) (bool, string) {
 	if len(d.Password) < 8 || len(d.Password) > 20 {
 		return false, "length of password must be between 8 and 20"
 	}

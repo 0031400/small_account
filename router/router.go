@@ -3,6 +3,7 @@ package router
 import (
 	"net/http"
 	"small_account/handler"
+	"small_account/middleware"
 )
 
 func SetupRouter() http.Handler {
@@ -12,5 +13,5 @@ func SetupRouter() http.Handler {
 	mux.HandleFunc("POST /login", handler.Login())
 	mux.HandleFunc("GEt /me", handler.GETMe())
 	mux.HandleFunc("POST /me", handler.POSTMe())
-	return mux
+	return middleware.Recovery(mux)
 }
